@@ -1,4 +1,8 @@
 #!/bin/sh
+###############################################################################
+# author: ashok.shivarudriah
+# Command line alert with announcement when the time is up
+###############################################################################
 Usage() {
   prog_name=$(basename $0)
   printf "%s: Alerts after n sec\n" ${prog_name}
@@ -25,5 +29,6 @@ while [ ${SLEEP_TIME} -gt 0 ]; do
   printf "\r%4d" ${SLEEP_TIME}
 done
 
+# if you are not on mac comment the below line
 say 'times up!!'
 printf "\n"
