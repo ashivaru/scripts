@@ -1,0 +1,102 @@
+#!/bin/sh
+################################################################################
+# author: ashok.shivarudraiah
+# Helper script for running VirtualBox in headless mode
+################################################################################
+usage() {
+  printf "Simple script to make vbox commands simpler for me\n"
+  printf "Usage: %s <command> [name] [username for ssh]\n" $(basename $0)
+  printf "  help        Print this message\n"
+  printf "  startvm     Start the given VM, in headless mode\n"
+  printf "  save        Saves the state for a particular VM\n"
+  printf "  kill        Kills the VM\n"
+  printf "  ssh         SSH to headless VM; Third arg is the username\n"
+  printf "  ip          IP address of the the given VM\n"
+  printf "  props       Print all the properties of a given VM\n"
+  printf "  listvms     List all the VMs\n"
+  printf "  runningvms  List all the running VMs\n"
+  printf "  togglenet   toggles network of bridge adapter eg: from en0 to en1\n"
+  printf "\n"
+  printf "Listing available VMs:\n"
+  printf "======================\n"
+  VBoxManage list vms
+  printf "\nListing running VMs:\n"
+  printf   "====================\n"
+  VBoxManage list runningvms
+  printf "\n\n"
+}
+case $1 in
+  startvm)
+    if [ $# -lt 2 ]; then
+      usage;
+      exit -2;
+    fi
+    VBoxManage startvm ${2} --type headless
+    ;;
+
+  save)
+    if [ $# -lt 2 ]; then
+      usage;
+      exit -2;
+    fi
+    VBoxManage controlvm ${2} savestate
+    ;;
+
+  kill)
+    if [ $# -lt 2 ]; then
+      usage;
+      exit -2;
+    fi
+    VBoxManage controlvm ${2} poweroff
+    ;;
+
+  ip)
+    if [ $# -lt 2 ]; then
+      usage;
+      exit -2;
+    fi
+    VBoxManage guestproperty get ${2} "/VirtualBox/GuestInfo/Net/0/V4/IP"
+    ;;
+
+  props)
+    if [ $# -lt 2 ]; then
+      usage;
+      exit -2;
+    fi
+    VBoxManage guestproperty enumerate ${2}
+    ;;
+
+  ssh)
+    if [ $# -lt 3 ]; then
+      printf "vbox(ssh): Need vm-name and username\n"
+      usage;
+      exit -2;
+    fi
+    ssh $3@$(VBoxManage guestproperty get ${2} "/VirtualBox/GuestInfo/Net/0/V4/IP" | awk '{ printf $2 }')
+    ;;
+
+  listvms)
+    VBoxManage list vms
+    ;;
+
+  runningvms)
+    VBoxManage list runningvms
+    ;;
+
+  togglenet)
+    nic=$(VBoxManage showvminfo --details Hadoop01 |grep -i brid|cut -d\' -f2)
+    printf "Toggling network from %s" ${nic}
+    if [ ${nic} == "en0" ]; then
+      nic=en1
+    else
+      nic=en0
+    fi
+    printf " to %s\n" ${nic}
+    VBoxManage modifyvm ${2} --nic1 bridged --bridgeadapter1 ${nic}
+    ;;
+
+  *)
+    usage;
+    exit -2;;
+
+esac
